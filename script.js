@@ -1,3 +1,4 @@
+// script.js
 window.onload = () => {
   const data = getTodayWords();
   const list = document.getElementById("today-words-list");
@@ -11,10 +12,7 @@ window.onload = () => {
     });
   }
 
-  const btn = document.getElementById("start-btn");
-  if (btn) {
-    btn.onclick = () => {
-      window.location.href = "listen.html";
-    };
-  }
+  document.getElementById("start-btn").onclick = () => {
+    window.location.href = "listen.html";
+  };
 };
