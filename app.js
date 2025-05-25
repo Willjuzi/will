@@ -1,104 +1,37 @@
-// 管理单词调度与记忆曲线逻辑
-
-const MEMORY_STAGES = [1, 2, 4, 7, 15]; // 天数间隔
-const DAILY_WORD_LIMIT = 8;
-const STORAGE_KEY = "juzi_memory_data";
-
-function loadMemoryData() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : {};
-}
-
-function saveMemoryData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-function getTodayKey() {
-  const today = new Date();
-  return today.toISOString().split("T")[0]; // YYYY-MM-DD
-}
-
-function isDue(dateStr, offsetDays) {
-  const due = new Date(dateStr);
-  due.setDate(due.getDate() + offsetDays);
-  return new Date() >= due;
-}
-
-function selectTodayWords() {
-  const memoryData = loadMemoryData();
-  const todayKey = getTodayKey();
-  let todayWords = [];
-  let learnedSet = new Set(Object.keys(memoryData));
-
-  // 添加复习中的单词
-  for (let [word, info] of Object.entries(memoryData)) {
-    let { history } = info;
-    if (!history) continue;
-    let nextStage = history.length;
-    if (nextStage < MEMORY_STAGES.length) {
-      if (isDue(info.startDate, MEMORY_STAGES[nextStage])) {
-        todayWords.push(word);
-      }
-    }
+// app.js
+function loadData() {
+  const raw = localStorage.getItem("juzi-word-data-v1");
+  if (raw) {
+    return JSON.parse(raw);
   }
-
-  // 添加新单词
-  let candidates = wordList.filter(w => !learnedSet.has(w));
-  while (todayWords.length < DAILY_WORD_LIMIT && candidates.length > 0) {
-    const word = candidates.shift();
-    memoryData[word] = {
-      startDate: getTodayKey(),
-      history: []
-    };
-    todayWords.push(word);
-  }
-
-  // 缓存今日词汇
-  memoryData["_today"] = {
-    date: todayKey,
-    words: todayWords
+  return {
+    learned: [],
+    correct: [],
+    error: [],
+    today: null,
+    queue: [],
   };
+}
 
-  saveMemoryData(memoryData);
-  return todayWords;
+function saveData(data) {
+  localStorage.setItem("juzi-word-data-v1", JSON.stringify(data));
+}
+
+function selectTodayWords(data, count = 8) {
+  const available = wordList.filter(w => !data.correct.some(c => c.word === w));
+  const shuffled = available.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
 }
 
 function getTodayWords() {
-  const memoryData = loadMemoryData();
-  const todayKey = getTodayKey();
-  const cached = memoryData["_today"];
-  if (cached && cached.date === todayKey) return cached.words;
-  return selectTodayWords();
-}
+  const data = loadData();
+  const todayStr = new Date().toISOString().split("T")[0];
 
-function updateWordProgress(word, correct) {
-  const data = loadMemoryData();
-  if (!data[word]) return;
-
-  if (correct) {
-    data[word].history.push(getTodayKey());
-  } else {
-    // reset if wrong
-    data[word].history = [];
-    data[word].startDate = getTodayKey();
+  if (data.today !== todayStr) {
+    data.today = todayStr;
+    data.queue = selectTodayWords(data);
+    saveData(data);
   }
 
-  saveMemoryData(data);
-}
-
-function getStats() {
-  const data = loadMemoryData();
-  const total = wordList.length;
-  let learned = 0, review = 0, done = 0;
-
-  for (let [key, val] of Object.entries(data)) {
-    if (key === "_today") continue;
-    const h = val.history.length;
-    if (h === 0) continue;
-    learned++;
-    if (h >= MEMORY_STAGES.length) done++;
-    else review++;
-  }
-
-  return { total, learned, review, done };
+  return data;
 }
