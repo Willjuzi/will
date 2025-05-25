@@ -1,7 +1,16 @@
+// app.js
 function loadData() {
   const raw = localStorage.getItem("juzi-word-data-v1");
-  if (raw) return JSON.parse(raw);
-  return { correct: [], error: [], today: null, queue: [] };
+  if (raw) {
+    return JSON.parse(raw);
+  }
+  return {
+    learned: [],
+    correct: [],
+    error: [],
+    today: null,
+    queue: [],
+  };
 }
 
 function saveData(data) {
@@ -9,9 +18,7 @@ function saveData(data) {
 }
 
 function selectTodayWords(data, count = 8) {
-  const available = wordList.filter(w =>
-    !data.correct.some(c => c.word === w)
-  );
+  const available = wordList.filter(w => !data.correct.some(c => c.word === w));
   const shuffled = available.sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }
