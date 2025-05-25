@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>听写模式</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>📝 听写模式</h1>
+    <p id="word-counter">第 1 / 8 个单词</p>
+
+    <button id="play-audio">🔊 播放单词</button>
+    <input type="text" id="user-input" placeholder="请输入听到的单词"/>
+    <button id="submit-btn">提交</button>
+
+    <p id="feedback"></p>
+    <button id="next-btn" style="display:none;">下一个</button>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="listen.js"></script>
+</body>
+</html>
