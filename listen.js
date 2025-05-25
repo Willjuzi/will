@@ -1,69 +1,59 @@
-let todayWords = getTodayWords();
+// listen.js
 let currentIndex = 0;
+let currentWord = "";
+let todayData = loadData();
 
-document.addEventListener("DOMContentLoaded", () => {
-  const input = document.getElementById("user-input");
-  const playBtn = document.getElementById("play-audio");
-  const submitBtn = document.getElementById("submit-btn");
-  const nextBtn = document.getElementById("next-btn");
+function speak(word) {
+  const utterance = new SpeechSynthesisUtterance(word);
+  utterance.lang = "en-US";
+  speechSynthesis.speak(utterance);
+}
+
+function playAudio() {
+  currentWord = todayData.queue[currentIndex];
+  speak(currentWord);
+}
+
+function submitAnswer() {
+  const input = document.getElementById("user-input").value.trim().toLowerCase();
   const feedback = document.getElementById("feedback");
-  const counter = document.getElementById("word-counter");
-
-  function updateCounter() {
-    counter.textContent = `第 ${currentIndex + 1} / ${todayWords.length} 个单词`;
-  }
-
-  function speak(word) {
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = "en-US";
-    speechSynthesis.speak(utterance);
-  }
-
-  function showFeedback(text, color) {
-    feedback.textContent = text;
-    feedback.style.color = color;
-  }
-
-  function handleSubmit() {
-    const expected = todayWords[currentIndex];
-    const answer = input.value.trim().toLowerCase();
-    if (!answer) return;
-
-    const correct = expected === answer;
-    updateWordProgress(expected, correct);
-
-    if (correct) {
-      showFeedback("✅ 正确！", "green");
+  if (input === currentWord) {
+    feedback.textContent = "✅ 正确！";
+    if (!todayData.correct.some(w => w.word === currentWord)) {
+      todayData.correct.push({ word: currentWord, memoryCount: 1 });
     } else {
-      showFeedback(`❌ 错误，应为：${expected}`, "red");
+      todayData.correct = todayData.correct.map(w => {
+        if (w.word === currentWord) w.memoryCount++;
+        return w;
+      });
     }
-
-    submitBtn.style.display = "none";
-    nextBtn.style.display = "inline-block";
+  } else {
+    feedback.textContent = `❌ 错误，正确拼写是：${currentWord}`;
+    if (!todayData.error.includes(currentWord)) {
+      todayData.error.push(currentWord);
+    }
   }
 
-  function handleNext() {
-    input.value = "";
-    feedback.textContent = "";
-    submitBtn.style.display = "inline-block";
-    nextBtn.style.display = "none";
+  document.getElementById("next-button").style.display = "inline-block";
+}
 
-    currentIndex++;
-    if (currentIndex >= todayWords.length) {
-      alert("🎉 今天的练习已完成！");
-      window.location.href = "index.html";
-      return;
-    }
+function nextWord() {
+  currentIndex++;
+  document.getElementById("user-input").value = "";
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("next-button").style.display = "none";
 
-    updateCounter();
+  if (currentIndex >= todayData.queue.length) {
+    alert("🎉 今天的听写完成！");
+    localStorage.setItem("juzi-word-data-v1", JSON.stringify(todayData));
+    window.location.href = "index.html";
+  } else {
+    playAudio();
   }
+}
 
-  playBtn.onclick = () => {
-    speak(todayWords[currentIndex]);
-  };
-
-  submitBtn.onclick = handleSubmit;
-  nextBtn.onclick = handleNext;
-
-  updateCounter();
-});
+// 初始化
+window.onload = () => {
+  todayData = loadData();
+  playAudio();
+};
