@@ -9,12 +9,16 @@
   <h1>听写模式</h1>
   <p>点击🔊播放单词，听写输入：</p>
   <button id="play-btn">🔊 播放</button>
-  <input type="text" id="user-input" placeholder="请输入单词">
+  <input type="text" id="user-input" placeholder="请输入单词" autocomplete="off">
   <button id="submit-btn">提交</button>
   <p id="feedback"></p>
+  <div id="wrong-words-list"></div>
 
   <script src="words.js"></script>
   <script src="app.js"></script>
   <script src="listen.js"></script>
 </body>
 </html>
+
+
+
