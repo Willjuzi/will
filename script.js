@@ -4,7 +4,7 @@ window.onload = () => {
 
   if (list) {
     list.innerHTML = "";
-    data.dailyPlan[new Date().toISOString().split("T")[0]].forEach(word => {
+    data.queue.forEach(word => {
       const li = document.createElement("li");
       li.textContent = word;
       list.appendChild(li);
@@ -18,54 +18,25 @@ window.onload = () => {
     };
   }
 
-  const statsPanel = document.getElementById("stats-panel");
-  if (statsPanel) {
-    let totalLearned = 0;
-    let learningCount = 0;
-    let doneCount = 0;
+  // 显示统计数据
+  const total = data.correct.length + data.error.length;
+  const learning = data.correct.filter(item => item.memoryCount < 5).length;
+  const done = data.correct.filter(item => item.memoryCount >= 5).length;
 
-    for (const word in data.wordStatusList) {
-      if (data.wordStatusList[word].status === 'done') {
-        doneCount++;
-      } else if (data.wordStatusList[word].status === 'learning') {
-        learningCount++;
-      }
-    }
+  document.getElementById("total-words").textContent = total;
+  document.getElementById("learning-words").textContent = learning;
+  document.getElementById("done-words").textContent = done;
 
-    totalLearned = Object.keys(data.wordStatusList).filter(word => data.wordStatusList[word].history.some(h => h.correct)).length;
-
-    document.getElementById("total-learned").textContent = totalLearned;
-    document.getElementById("learning-count").textContent = learningCount;
-    document.getElementById("done-count").textContent = doneCount;
-  }
-
-  const ctx = document.getElementById('progress-chart').getContext('2d');
-  const progressChart = new Chart(ctx, {
-    type: 'pie',
+  // 可视化图表（需引入 Chart.js）
+  const ctx = document.getElementById("progress-chart").getContext("2d");
+  new Chart(ctx, {
+    type: "pie",
     data: {
-      labels: ['已完成', '正在记忆中', '未开始'],
+      labels: ["已完成", "记忆中", "未学习"],
       datasets: [{
-        label: '学习进度',
-        data: [Object.values(data.wordStatusList).filter(w => w.status === 'done').length,
-               Object.values(data.wordStatusList).filter(w => w.status === 'learning').length,
-               Object.keys(data.wordStatusList).length - Object.values(data.wordStatusList).filter(w => w.status !== 'new').length],
-        backgroundColor: ['#FFD700', '#FFA500', '#FFFACD']
+        data: [done, learning, wordList.length - total],
+        backgroundColor: ["#4caf50", "#ff9800", "#f44336"]
       }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        title: {
-          display: true,
-          text: '学习进度'
-        }
-      }
     }
   });
 };
-
-
-
