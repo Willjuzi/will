@@ -10,6 +10,3 @@ const wordList = [
   "resource", "say", "great", "four", "help", "through", "gold", "cold", "fold",
   "mold", "sold", "told", "subtract", "answer", "baby", "parent", "stages"
 ];
-
-
-
