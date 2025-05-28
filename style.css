@@ -49,5 +49,9 @@ input {
   list-style-type: none;
 }
 
+canvas {
+  margin: 20px 0;
+}
+
 
 
