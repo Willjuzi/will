@@ -1,62 +1,60 @@
 function loadData() {
   const raw = localStorage.getItem("juzi-word-data-v1");
   if (raw) return JSON.parse(raw);
-  return { wordStatusList: {}, learnedStats: { totalLearned: 0, learningCount: 0, doneCount: 0 }, dailyPlan: {} };
+  return {
+    correct: [],
+    error: [],
+    today: null,
+    queue: [],
+    stats: {
+      total: 0,
+      learning: 0,
+      done: 0
+    }
+  };
 }
 
 function saveData(data) {
   localStorage.setItem("juzi-word-data-v1", JSON.stringify(data));
 }
 
-function getNextReviewDay(lastCorrectDate, intervalDays) {
-  const date = new Date(lastCorrectDate);
-  date.setDate(date.getDate() + intervalDays);
-  return date.toISOString().split('T')[0];
-}
-
-function selectTodayWords(wordStatusList) {
+function selectTodayWords(data, count = 8) {
   const todayStr = new Date().toISOString().split("T")[0];
-  let selectedWords = [];
 
-  // Priority 1: 错词
-  for (const word in wordStatusList) {
-    if (wordStatusList[word].status === 'error') {
-      selectedWords.push(word);
-      wordStatusList[word].status = 'new'; // Reset status after selecting
-    }
-  }
+  // 错词优先
+  const errorWords = data.error;
 
-  // Priority 2: 到期复习词
-  for (const word in wordStatusList) {
-    if (selectedWords.length >= 8) break;
-    if (wordStatusList[word].nextReviewDay && wordStatusList[word].nextReviewDay <= todayStr) {
-      selectedWords.push(word);
-    }
-  }
+  // 到期的复习词
+  const dueWords = data.correct.filter(item => {
+    const lastDate = item.lastDate;
+    const memoryCount = item.memoryCount;
+    const daysSinceLast = Math.floor((new Date(todayStr) - new Date(lastDate)) / (1000 * 60 * 60 * 24));
+    const schedule = [1, 2, 3, 8]; // 第2天、第4天、第7天、第15天
+    return daysSinceLast >= schedule[memoryCount - 1];
+  }).map(item => item.word);
 
-  // Priority 3: 新词
-  for (const word of wordList) {
-    if (selectedWords.length >= 8) break;
-    if (!wordStatusList[word]) {
-      wordStatusList[word] = { status: 'new', history: [], nextReviewDay: null };
-      selectedWords.push(word);
-    }
-  }
+  // 新词
+  const learnedWords = data.correct.map(item => item.word);
+  const newWords = wordList.filter(w => !learnedWords.includes(w) && !errorWords.includes(w));
 
-  return selectedWords;
+  // 组合今日词汇
+  const combined = [...errorWords, ...dueWords];
+  const needed = count - combined.length;
+  const selectedNew = newWords.slice(0, needed);
+  const todayQueue = [...combined, ...selectedNew].slice(0, count);
+
+  return todayQueue;
 }
 
 function getTodayWords() {
   const data = loadData();
   const todayStr = new Date().toISOString().split("T")[0];
 
-  if (!data.dailyPlan[todayStr]) {
-    data.dailyPlan[todayStr] = selectTodayWords(data.wordStatusList);
+  if (data.today !== todayStr) {
+    data.today = todayStr;
+    data.queue = selectTodayWords(data);
     saveData(data);
   }
 
   return data;
 }
-
-
-
